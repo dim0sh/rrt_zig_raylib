@@ -5,6 +5,7 @@ run command:
 ```bash
 zig build run
 ```
+this command builds and executs the project
 # Requirements
 zig language is required to run.
 
@@ -17,5 +18,3 @@ https://github.com/ziglang/zig/wiki/Install-Zig-from-a-Package-Manager
 download:
 
 https://ziglang.org/download/
-
-this command builds and executs the project
