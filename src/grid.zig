@@ -1,11 +1,12 @@
 const ray = @cImport(@cInclude("raylib.h"));
 const std = @import("std");
 
-const Cell = enum {
+const Cell = enum(u8) {
     Empty,
     Wall,
     Start,
     End,
+    _,
 };
 
 pub const Grid = struct {
@@ -37,6 +38,24 @@ pub const Grid = struct {
         self.cells.items[x + y * self.width] = cell;
     }
 
+    pub fn generate_cost(self: *Grid) void {
+        var rng = std.rand.Xoshiro256.init(0);
+        for (self.cells.items, 0..) |cell, idx| {
+            if (cell == Cell.Empty) {
+                const rand = rng.random().intRangeAtMost(u8, 0, 100);
+                switch (rand) {
+                    0...3 => {
+                        self.cells.items[idx] = Cell.Wall;
+                    },
+                    4...20 => {
+                        self.cells.items[idx] = @enumFromInt(rand);
+                    },
+                    else => {},
+                }
+            }
+        }
+    }
+
     pub fn draw(self: *const Grid) void {
         const cell_width: c_int = @intCast(self.cell_width);
         for (self.cells.items, 0..) |cell, idx| {
@@ -47,7 +66,7 @@ pub const Grid = struct {
             switch (cell) {
                 Cell.Empty => {},
                 Cell.Wall => {
-                    const color = ray.Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+                    const color = ray.Color{ .r = 255, .g = 0, .b = 255, .a = 255 };
                     ray.DrawRectangle(c_x * cell_width, c_y * cell_width, cell_width, cell_width, color);
                 },
                 Cell.Start => {
@@ -56,6 +75,11 @@ pub const Grid = struct {
                 },
                 Cell.End => {
                     const color = ray.Color{ .r = 255, .g = 0, .b = 0, .a = 255 };
+                    ray.DrawRectangle(c_x * cell_width, c_y * cell_width, cell_width, cell_width, color);
+                },
+                _ => {
+                    const enum_val = @intFromEnum(cell) * 10;
+                    const color = ray.Color{ .r = enum_val, .g = enum_val, .b = enum_val, .a = 255 };
                     ray.DrawRectangle(c_x * cell_width, c_y * cell_width, cell_width, cell_width, color);
                 },
             }

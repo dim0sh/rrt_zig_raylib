@@ -17,6 +17,8 @@ pub fn main() !void {
     var grid = try grid_lib.Grid.init(WINDOW_WIDTH, WINDOW_HEIGHT, 20, arena.allocator());
     defer grid.deinit();
 
+    grid.generate_cost();
+
     var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 100, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT);
     defer rrt.deinit();
 
@@ -25,20 +27,14 @@ pub fn main() !void {
     ray.InitWindow(WINDOW_WIDTH + margin, WINDOW_HEIGHT + margin, WINDOW_TITLE);
     ray.SetTargetFPS(TARGET_FPS);
     defer ray.CloseWindow();
-    // var start = std.time.milliTimestamp();
-    // var done = true;
-    // var rng = std.rand.Xoshiro256.init(0);
 
     while (!ray.WindowShouldClose()) {
         ray.BeginDrawing();
         defer ray.EndDrawing();
         ray.ClearBackground(ray.BLACK);
-        rrt.draw();
         grid.draw();
+        rrt.draw();
         rrt.draw_solution();
-        // const current = std.time.milliTimestamp();
-        // const elapsed = current - start;
-        // start = current;
 
         // ray.DrawFPS(WINDOW_HEIGHT - 100, 0);
     }
