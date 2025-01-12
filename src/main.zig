@@ -14,12 +14,12 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
-    var grid = try grid_lib.Grid.init(WINDOW_WIDTH, WINDOW_HEIGHT, 20, arena.allocator());
+    var grid = try grid_lib.Grid.init(WINDOW_WIDTH, WINDOW_HEIGHT, 40, arena.allocator());
     defer grid.deinit();
 
     grid.generate_cost();
 
-    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 100, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT);
+    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 30, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
     defer rrt.deinit();
 
     try rrt.generate_nodes();

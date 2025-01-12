@@ -28,14 +28,14 @@ pub const Graph = struct {
         return &self.nodes.items[node.parent.?];
     }
 
-    pub fn draw(self: *Graph, cell_width: usize) void {
+    pub fn draw(self: *Graph, cell_width: usize, color: ray.Color) void {
         for (self.nodes.items) |node| {
             const x = node.x;
             const y = node.y;
             const c_x: c_int = @intCast(x);
             const c_y: c_int = @intCast(y);
             const c_cell_width: f32 = @floatFromInt(cell_width);
-            const color = ray.Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
+            // const color = ray.Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
             ray.DrawCircle(c_x, c_y, c_cell_width, color);
             // ray.DrawRectangle(c_x, c_y, c_cell_width, c_cell_width, color);
             if (node.parent != null) {

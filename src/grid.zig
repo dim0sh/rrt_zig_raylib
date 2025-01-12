@@ -38,17 +38,35 @@ pub const Grid = struct {
         self.cells.items[x + y * self.width] = cell;
     }
 
+    pub fn check_node_wall(self: *const Grid, x: i32, y: i32) bool {
+        const u_x: usize = @intCast(x);
+        const u_y: usize = @intCast(y);
+        if (u_x >= self.width * self.cell_width or u_y >= self.height * self.cell_width) {
+            return true;
+        }
+        return self.get(u_x / self.cell_width, u_y / self.cell_width) == Cell.Wall;
+    }
+
     pub fn generate_cost(self: *Grid) void {
         var rng = std.rand.Xoshiro256.init(0);
         for (self.cells.items, 0..) |cell, idx| {
             if (cell == Cell.Empty) {
                 const rand = rng.random().intRangeAtMost(u8, 0, 100);
                 switch (rand) {
-                    0...3 => {
-                        self.cells.items[idx] = Cell.Wall;
-                    },
+                    // 0...3 => {
+                    //     self.cells.items[idx] = Cell.Wall;
+                    // },
                     4...20 => {
                         self.cells.items[idx] = @enumFromInt(rand);
+                    },
+                    21...30 => {
+                        self.cells.items[idx] = Cell.Wall;
+                        if (idx + 1 < self.cells.items.len - 1) {
+                            self.cells.items[idx + 1] = Cell.Wall;
+                        }
+                        if (idx - 1 > 0) {
+                            self.cells.items[idx - 1] = Cell.Wall;
+                        }
                     },
                     else => {},
                 }
