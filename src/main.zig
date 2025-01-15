@@ -19,10 +19,10 @@ pub fn main() !void {
 
     grid.generate_cost();
 
-    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 30, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
+    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 20, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
     defer rrt.deinit();
 
-    try rrt.generate_nodes();
+    try rrt.rrt();
 
     ray.InitWindow(WINDOW_WIDTH + margin, WINDOW_HEIGHT + margin, WINDOW_TITLE);
     ray.SetTargetFPS(TARGET_FPS);

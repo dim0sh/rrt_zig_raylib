@@ -56,17 +56,17 @@ pub const Grid = struct {
                     // 0...3 => {
                     //     self.cells.items[idx] = Cell.Wall;
                     // },
-                    4...20 => {
-                        self.cells.items[idx] = @enumFromInt(rand);
+                    0...40 => {
+                        self.cells.items[idx] = @enumFromInt(@min(rand + 4, 25));
                     },
-                    21...30 => {
+                    41...52 => {
                         self.cells.items[idx] = Cell.Wall;
-                        if (idx + 1 < self.cells.items.len - 1) {
-                            self.cells.items[idx + 1] = Cell.Wall;
-                        }
-                        if (idx - 1 > 0) {
-                            self.cells.items[idx - 1] = Cell.Wall;
-                        }
+                        // if (idx + 1 < self.cells.items.len - 1) {
+                        //     self.cells.items[idx + 1] = Cell.Wall;
+                        // }
+                        // if (idx - 1 > 0) {
+                        //     self.cells.items[idx - 1] = Cell.Wall;
+                        // }
                     },
                     else => {},
                 }

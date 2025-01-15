@@ -56,7 +56,97 @@ pub const RRT = struct {
         }
     }
 
-    pub fn generate_nodes(self: *RRT) !void {
+    fn get_cost_grid(self: *const RRT, x: i32, y: i32) ?u8 {
+        if (self.grid.check_node_wall(x, y)) {
+            return null;
+        }
+        const u_x: usize = @intCast(x);
+        const u_y: usize = @intCast(y);
+
+        return @intFromEnum(self.grid.get(u_x / self.grid.cell_width, u_y / self.grid.cell_width));
+    }
+
+    fn transition_test(cost_near: u8, cost_new: u8, distance: i32) bool {
+        if (cost_new > 20) {
+            return false;
+        }
+        if (cost_near > cost_new) {
+            return true;
+        }
+        const max_fail = 100;
+        var fail: u8 = 0;
+        const K: f32 = 1;
+        var T: f32 = 1;
+        const delta_cost = cost_new - cost_near;
+        const f_delta_cost: f32 = @floatFromInt(delta_cost);
+        const f_distance: f32 = @floatFromInt(distance);
+        const p = std.math.exp((-f_delta_cost / f_distance) / (K * T));
+        var rng = std.rand.Xoshiro256.init(0);
+        const rand = rng.random().floatNorm(f32);
+        if (rand < p) {
+            T = T / 1.1;
+            fail = 0;
+            return true;
+        } else {
+            if (fail > max_fail) {
+                T = T * 1.1;
+                fail = 0;
+            } else {
+                fail += 1;
+            }
+        }
+
+        return false;
+    }
+
+    pub fn t_rrt(self: *RRT) !void {
+        var rng = std.rand.Xoshiro256.init(0);
+        while (self.max_iterations > 0) {
+            var new_node = self.random_node(&rng);
+            if (self.grid.check_node_wall(new_node.x, new_node.y)) {
+                continue;
+            }
+            var parent_id: usize = 0;
+            var min_distance: i32 = 10000000;
+            for (self.graph.nodes.items) |node| {
+                const distance = node.distance(&new_node);
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    parent_id = node.id;
+                }
+            }
+            if (min_distance > (self.step_size * self.step_size) * 2) {
+                new_node = new_node.generate_closer_node(self.graph.get_node(parent_id), self.step_size);
+            }
+            if (self.grid.check_node_wall(new_node.x, new_node.y)) {
+                continue;
+            }
+            var cost_new: u8 = undefined;
+            var cost_near: u8 = undefined;
+            if (self.get_cost_grid(new_node.x, new_node.y)) |cost_n| {
+                cost_new = cost_n;
+            } else {
+                continue;
+            }
+            new_node.set_parent(parent_id);
+            if (self.get_cost_grid(self.graph.get_node(parent_id).x, self.graph.get_node(parent_id).y)) |cost_na| {
+                cost_near = cost_na;
+            } else {
+                continue;
+            }
+            if (!transition_test(cost_near, cost_new, min_distance)) {
+                continue;
+            }
+            try self.graph.add_node(new_node);
+            self.max_iterations -= 1;
+            if (new_node.distance(&self.end) < (self.step_size * self.step_size) * 2) {
+                self.end.set_parent(new_node.id);
+                return;
+            }
+        }
+    }
+
+    pub fn rrt(self: *RRT) !void {
         var rng = std.rand.Xoshiro256.init(0);
         while (self.max_iterations > 0) {
             var new_node = self.random_node(&rng);
