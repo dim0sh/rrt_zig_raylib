@@ -6,6 +6,10 @@ run command:
 zig build run
 ```
 this command builds and executs the project
+# Functionality
+## vizualization of algorithms:
+- RRT
+- TRRT
 # Requirements
 zig language is required to run.
 
