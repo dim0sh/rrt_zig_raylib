@@ -2,6 +2,7 @@ const ray = @cImport(@cInclude("raylib.h"));
 const std = @import("std");
 const grid_lib = @import("grid.zig");
 const rrt_lib = @import("rrt.zig");
+const map_lib = @import("map.zig");
 
 const WINDOW_TITLE = "falling sand";
 pub const WINDOW_WIDTH = 1600;
@@ -17,9 +18,11 @@ pub fn main() !void {
     var grid = try grid_lib.Grid.init(WINDOW_WIDTH, WINDOW_HEIGHT, 40, arena.allocator());
     defer grid.deinit();
 
-    grid.generate_cost();
+    map_lib.create_map(&grid);
 
-    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 20, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
+    // grid.generate_cost();
+
+    var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, 20, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
     defer rrt.deinit();
 
     try rrt.t_rrt();

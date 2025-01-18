@@ -15,8 +15,8 @@ pub const RRT = struct {
 
     pub fn init(start_x: i32, start_y: i32, end_x: i32, end_y: i32, step_size: usize, max_iterations: usize, allocator: std.mem.Allocator, width: i32, height: i32, grid: *const Grid) !RRT {
         var graph = graph_lib.Graph.init(allocator);
-        const start = graph_lib.Node.new(0, start_x, start_y, null);
-        const end = graph_lib.Node.new(1, end_x, end_y, null);
+        const start = graph_lib.Node.new(0, start_x, start_y, null, 0);
+        const end = graph_lib.Node.new(1, end_x, end_y, null, 0);
         try graph.add_node(start);
         return RRT{
             .graph = graph,
@@ -43,7 +43,7 @@ pub const RRT = struct {
         const x = rng.random().intRangeAtMost(i32, 0, self.width);
         const y = rng.random().intRangeAtMost(i32, 0, self.height);
         const id = self.graph.nodes.items.len;
-        return graph_lib.Node.new(id, x, y, null);
+        return graph_lib.Node.new(id, x, y, null, 0);
     }
 
     pub fn draw_solution(self: *RRT) void {
@@ -66,17 +66,18 @@ pub const RRT = struct {
         return @intFromEnum(self.grid.get(u_x / self.grid.cell_width, u_y / self.grid.cell_width));
     }
 
-    fn transition_test(cost_near: u8, cost_new: u8, distance: i32) bool {
-        if (cost_new > 20) {
+    fn transition_test(cost_near: usize, cost_new: usize, distance: i32) bool {
+        const max_cost: usize = 1000;
+        const K: f32 = 200;
+        var T: f32 = 1;
+        if (cost_new > max_cost) {
             return false;
         }
         if (cost_near > cost_new) {
             return true;
         }
-        const max_fail = 100;
+        const max_fail = 1000;
         var fail: u8 = 0;
-        const K: f32 = 1;
-        var T: f32 = 1;
         const delta_cost = cost_new - cost_near;
         const f_delta_cost: f32 = @floatFromInt(delta_cost);
         const f_distance: f32 = @floatFromInt(distance);
@@ -115,25 +116,26 @@ pub const RRT = struct {
                     parent_id = node.id;
                 }
             }
+            new_node.set_parent(parent_id);
+
             if (min_distance > (self.step_size * self.step_size) * 2) {
                 new_node = new_node.generate_closer_node(self.graph.get_node(parent_id), self.step_size);
             }
+
             if (self.grid.check_node_wall(new_node.x, new_node.y)) {
                 continue;
             }
-            var cost_new: u8 = undefined;
-            var cost_near: u8 = undefined;
+            const parent = self.graph.get_node(parent_id);
+
+            var cost_new: usize = parent.cost;
+            const cost_near: usize = parent.cost;
             if (self.get_cost_grid(new_node.x, new_node.y)) |cost_n| {
-                cost_new = cost_n;
+                cost_new += cost_n;
             } else {
                 continue;
             }
-            new_node.set_parent(parent_id);
-            if (self.get_cost_grid(self.graph.get_node(parent_id).x, self.graph.get_node(parent_id).y)) |cost_na| {
-                cost_near = cost_na;
-            } else {
-                continue;
-            }
+            new_node.set_cost(cost_new);
+
             if (!transition_test(cost_near, cost_new, min_distance)) {
                 continue;
             }

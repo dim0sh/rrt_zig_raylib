@@ -51,18 +51,24 @@ pub const Node = struct {
     x: i32,
     y: i32,
     parent: ?usize,
+    cost: usize,
 
-    pub fn new(id: usize, x: i32, y: i32, parent: ?usize) Node {
+    pub fn new(id: usize, x: i32, y: i32, parent: ?usize, cost: usize) Node {
         return Node{
             .id = id,
             .x = x,
             .y = y,
             .parent = parent,
+            .cost = cost,
         };
     }
 
     pub fn set_parent(self: *Node, parent: ?usize) void {
         self.parent = parent;
+    }
+
+    pub fn set_cost(self: *Node, cost: usize) void {
+        self.cost = cost;
     }
 
     pub fn draw_to_parent(self: *const Node, parent: *const Node, color: ray.Color) void {
@@ -91,6 +97,6 @@ pub const Node = struct {
         const y = f_p_y + (f_dy / node_distance) * f_step_size;
         const i_x: i32 = @intFromFloat(x);
         const i_y: i32 = @intFromFloat(y);
-        return Node.new(self.id, i_x, i_y, parent.id);
+        return Node.new(self.id, i_x, i_y, parent.id, 0);
     }
 };

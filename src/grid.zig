@@ -1,7 +1,7 @@
 const ray = @cImport(@cInclude("raylib.h"));
 const std = @import("std");
 
-const Cell = enum(u8) {
+pub const Cell = enum(u8) {
     Empty,
     Wall,
     Start,
@@ -21,8 +21,8 @@ pub const Grid = struct {
         var cells = std.ArrayList(Cell).init(alloc);
         try cells.ensureTotalCapacity(grid_height * grid_width);
         cells.appendNTimesAssumeCapacity(Cell.Empty, grid_height * grid_width);
-        cells.items[0] = Cell.Start;
-        cells.items[(grid_height * grid_width) - 1] = Cell.End;
+        // cells.items[0] = Cell.Start;
+        // cells.items[(grid_height * grid_width) - 1] = Cell.End;
         return Grid{ .width = grid_width, .height = grid_height, .cell_width = cell_width, .cells = cells };
     }
 
@@ -51,15 +51,12 @@ pub const Grid = struct {
         var rng = std.rand.Xoshiro256.init(0);
         for (self.cells.items, 0..) |cell, idx| {
             if (cell == Cell.Empty) {
-                const rand = rng.random().intRangeAtMost(u8, 0, 100);
+                const rand = rng.random().intRangeAtMost(u8, 0, 255);
                 switch (rand) {
                     // 0...3 => {
                     //     self.cells.items[idx] = Cell.Wall;
                     // },
-                    0...40 => {
-                        self.cells.items[idx] = @enumFromInt(@min(rand + 4, 25));
-                    },
-                    41...52 => {
+                    0...12 => {
                         self.cells.items[idx] = Cell.Wall;
                         // if (idx + 1 < self.cells.items.len - 1) {
                         //     self.cells.items[idx + 1] = Cell.Wall;
@@ -67,6 +64,9 @@ pub const Grid = struct {
                         // if (idx - 1 > 0) {
                         //     self.cells.items[idx - 1] = Cell.Wall;
                         // }
+                    },
+                    13...60 => {
+                        self.cells.items[idx] = @enumFromInt(@min(rand + 4, 255));
                     },
                     else => {},
                 }
@@ -96,7 +96,7 @@ pub const Grid = struct {
                     ray.DrawRectangle(c_x * cell_width, c_y * cell_width, cell_width, cell_width, color);
                 },
                 _ => {
-                    const enum_val = @intFromEnum(cell) * 10;
+                    const enum_val = @intFromEnum(cell);
                     const color = ray.Color{ .r = enum_val, .g = enum_val, .b = enum_val, .a = 255 };
                     ray.DrawRectangle(c_x * cell_width, c_y * cell_width, cell_width, cell_width, color);
                 },
