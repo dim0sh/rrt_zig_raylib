@@ -75,7 +75,7 @@ pub const Node = struct {
         // ray.DrawLine(self.x, self.y, parent.x, parent.y, color);
         const start = ray.Vector2{ .x = @floatFromInt(self.x), .y = @floatFromInt(self.y) };
         const end = ray.Vector2{ .x = @floatFromInt(parent.x), .y = @floatFromInt(parent.y) };
-        ray.DrawLineEx(start, end, 5, color);
+        ray.DrawLineEx(start, end, 8, color);
     }
 
     pub fn distance(self: *const Node, other: *const Node) i32 {

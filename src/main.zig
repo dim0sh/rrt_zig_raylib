@@ -25,7 +25,7 @@ pub fn main() !void {
     var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, 30, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
     defer rrt.deinit();
 
-    try rrt.rrt();
+    try rrt.t_rrt_star();
 
     ray.InitWindow(WINDOW_WIDTH + margin, WINDOW_HEIGHT + margin, WINDOW_TITLE);
     ray.SetTargetFPS(TARGET_FPS);

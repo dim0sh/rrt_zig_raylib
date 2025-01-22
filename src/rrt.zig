@@ -65,10 +65,11 @@ pub const RRT = struct {
 
         return @intFromEnum(self.grid.get(u_x / self.grid.cell_width, u_y / self.grid.cell_width));
     }
-
+    // transition test for transition based t-rrt algorithm
     fn transition_test(cost_near: usize, cost_new: usize, distance: i32) bool {
-        const max_cost: usize = 1000;
-        const K: f32 = 200;
+        const alpha: f32 = 1.2;
+        const max_cost: usize = 76500;
+        const K: f32 = 5000;
         var T: f32 = 1;
         if (cost_new > max_cost) {
             return false;
@@ -85,12 +86,12 @@ pub const RRT = struct {
         var rng = std.rand.Xoshiro256.init(0);
         const rand = rng.random().floatNorm(f32);
         if (rand < p) {
-            T = T / 1.1;
+            T = T / alpha;
             fail = 0;
             return true;
         } else {
             if (fail > max_fail) {
-                T = T * 1.1;
+                T = T * alpha;
                 fail = 0;
             } else {
                 fail += 1;
@@ -99,14 +100,97 @@ pub const RRT = struct {
 
         return false;
     }
-
-    pub fn t_rrt(self: *RRT) !void {
+    // transition based rrt (cost efficient path)
+    pub fn t_rrt_star(self: *RRT) !void {
         var rng = std.rand.Xoshiro256.init(0);
         while (self.max_iterations > 0) {
+            // generate / sample new node
             var new_node = self.random_node(&rng);
+            // validate sampled node
             if (self.grid.check_node_wall(new_node.x, new_node.y)) {
                 continue;
             }
+            // find closest node
+            var parent_id: usize = 0;
+            var min_distance: i32 = 1000000;
+            for (self.graph.nodes.items) |node| {
+                const distance = node.distance(&new_node);
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    parent_id = node.id;
+                }
+            }
+            new_node.set_parent(parent_id);
+            const parent = self.graph.get_node(parent_id);
+
+            // generate closer node if too far
+            if (min_distance > (self.step_size * self.step_size) * 2) {
+                new_node = new_node.generate_closer_node(self.graph.get_node(parent_id), self.step_size);
+            }
+            // node validation
+            if (self.grid.check_node_wall(new_node.x, new_node.y)) {
+                continue;
+            }
+
+            const distance_cost: usize = @intCast(new_node.distance(parent));
+            // set new node cost
+            var cost_new: usize = 0;
+            const cost_near: usize = parent.cost;
+            if (self.get_cost_grid(new_node.x, new_node.y)) |cost_n| {
+                cost_new = cost_n;
+            } else {
+                continue;
+            }
+            new_node.set_cost(parent.cost + cost_new * distance_cost);
+            // transition test for new node
+            if (!transition_test(cost_near, parent.cost + cost_new * distance_cost, min_distance)) {
+                continue;
+            }
+            var updated_nodes: [100]usize = undefined;
+            var idx: usize = 0;
+            const threashold = self.step_size * 4;
+            for (self.graph.nodes.items) |node| {
+                const distance = node.distance(&new_node);
+                if (distance < threashold) {
+                    updated_nodes[idx] = node.id;
+                    idx += 1;
+                }
+            }
+            for (updated_nodes[0..idx]) |id| {
+                const node = self.graph.get_node(id);
+                const cost = node.cost;
+
+                if (self.get_cost_grid(node.x, node.y)) |cost_n| {
+                    const distance_c: usize = @intCast(node.distance(&new_node));
+                    const c_p: usize = new_node.cost + cost_n * distance_c;
+                    if (cost > c_p) {
+                        node.set_parent(new_node.id);
+                        node.set_cost(c_p);
+                    }
+                }
+            }
+
+            // add new node to graph and decrement iterations
+            try self.graph.add_node(new_node);
+            self.max_iterations -= 1;
+            // check if end node is reached
+            if (new_node.distance(&self.end) < (self.step_size * self.step_size) * 2) {
+                self.end.set_parent(new_node.id);
+                // return;
+            }
+        }
+    }
+    // transition based rrt (cost efficient path)
+    pub fn t_rrt(self: *RRT) !void {
+        var rng = std.rand.Xoshiro256.init(0);
+        while (self.max_iterations > 0) {
+            // generate / sample new node
+            var new_node = self.random_node(&rng);
+            // validate sampled node
+            if (self.grid.check_node_wall(new_node.x, new_node.y)) {
+                continue;
+            }
+            // find closest node
             var parent_id: usize = 0;
             var min_distance: i32 = 10000000;
             for (self.graph.nodes.items) |node| {
@@ -117,16 +201,16 @@ pub const RRT = struct {
                 }
             }
             new_node.set_parent(parent_id);
-
+            // generate closer node if too far
             if (min_distance > (self.step_size * self.step_size) * 2) {
                 new_node = new_node.generate_closer_node(self.graph.get_node(parent_id), self.step_size);
             }
-
+            // node validation
             if (self.grid.check_node_wall(new_node.x, new_node.y)) {
                 continue;
             }
             const parent = self.graph.get_node(parent_id);
-
+            // set new node cost
             var cost_new: usize = parent.cost;
             const cost_near: usize = parent.cost;
             if (self.get_cost_grid(new_node.x, new_node.y)) |cost_n| {
@@ -135,19 +219,21 @@ pub const RRT = struct {
                 continue;
             }
             new_node.set_cost(cost_new);
-
+            // transition test for new node
             if (!transition_test(cost_near, cost_new, min_distance)) {
                 continue;
             }
+            // add new node to graph and decrement iterations
             try self.graph.add_node(new_node);
             self.max_iterations -= 1;
+            // check if end node is reached
             if (new_node.distance(&self.end) < (self.step_size * self.step_size) * 2) {
                 self.end.set_parent(new_node.id);
                 return;
             }
         }
     }
-
+    // basic rrt (shortest path)
     pub fn rrt(self: *RRT) !void {
         var rng = std.rand.Xoshiro256.init(0);
         while (self.max_iterations > 0) {
