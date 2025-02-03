@@ -9,7 +9,7 @@ pub const WINDOW_WIDTH = 1600;
 pub const WINDOW_HEIGHT = 900;
 const margin = 10;
 const TARGET_FPS = 1000;
-const ITERATIONS = 10000;
+const ITERATIONS = 20000;
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -25,7 +25,7 @@ pub fn main() !void {
     var rrt = try rrt_lib.RRT.init(0, 0, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, 30, ITERATIONS, arena.allocator(), WINDOW_WIDTH, WINDOW_HEIGHT, &grid);
     defer rrt.deinit();
 
-    try rrt.t_rrt_star();
+    try rrt.t_rrt();
 
     ray.InitWindow(WINDOW_WIDTH + margin, WINDOW_HEIGHT + margin, WINDOW_TITLE);
     ray.SetTargetFPS(TARGET_FPS);
@@ -39,6 +39,6 @@ pub fn main() !void {
         rrt.draw();
         rrt.draw_solution();
 
-        // ray.DrawFPS(WINDOW_HEIGHT - 100, 0);
+        ray.DrawFPS(WINDOW_HEIGHT - 100, 0);
     }
 }

@@ -68,7 +68,7 @@ pub const RRT = struct {
     // transition test for transition based t-rrt algorithm
     fn transition_test(cost_near: usize, cost_new: usize, distance: i32) bool {
         const alpha: f32 = 1.2;
-        const max_cost: usize = 76500;
+        const max_cost: usize = 120000;
         const K: f32 = 5000;
         var T: f32 = 1;
         if (cost_new > max_cost) {
@@ -141,14 +141,14 @@ pub const RRT = struct {
             } else {
                 continue;
             }
-            new_node.set_cost(parent.cost + cost_new * distance_cost);
+            new_node.set_cost(parent.cost + @max(1, cost_new) * distance_cost);
             // transition test for new node
             if (!transition_test(cost_near, parent.cost + cost_new * distance_cost, min_distance)) {
                 continue;
             }
             var updated_nodes: [100]usize = undefined;
             var idx: usize = 0;
-            const threashold = self.step_size * 4;
+            const threashold = self.step_size * 10;
             for (self.graph.nodes.items) |node| {
                 const distance = node.distance(&new_node);
                 if (distance < threashold) {
@@ -162,7 +162,7 @@ pub const RRT = struct {
 
                 if (self.get_cost_grid(node.x, node.y)) |cost_n| {
                     const distance_c: usize = @intCast(node.distance(&new_node));
-                    const c_p: usize = new_node.cost + cost_n * distance_c;
+                    const c_p: usize = new_node.cost + @max(1, cost_n) * distance_c;
                     if (cost > c_p) {
                         node.set_parent(new_node.id);
                         node.set_cost(c_p);
@@ -174,7 +174,7 @@ pub const RRT = struct {
             try self.graph.add_node(new_node);
             self.max_iterations -= 1;
             // check if end node is reached
-            if (new_node.distance(&self.end) < (self.step_size * self.step_size) * 2) {
+            if (new_node.distance(&self.end) < (self.step_size * self.step_size) * 2 and self.end.parent == null) {
                 self.end.set_parent(new_node.id);
                 // return;
             }
